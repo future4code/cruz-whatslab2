@@ -1,13 +1,42 @@
 import './App.css';
 import React from 'react'
-import styled from 'styled-components'
+import styled, { css } from 'styled-components'
 import { createGlobalStyle } from 'styled-components'
+import AppBar from '@material-ui/core/AppBar'
+import Toolbar from '@material-ui/core/Toolbar'
+import Typography from '@material-ui/core/Typography'
+import Button from '@material-ui/core/Button'
+import DoneIcon from '@material-ui/icons/Done';
+import DoneAllIcon from '@material-ui/icons/DoneAll';
+import SendIcon from '@material-ui/icons/Send';
+import TextField from '@material-ui/core/TextField'
+import useSound from 'use-sound'
+
 
 const GlobalStyle = createGlobalStyle`
   margin: 0;
   padding: 0;
   box-sizing: border-box;
   list-style: none;
+`
+
+const TopMenu = styled(AppBar)`
+  width: 100%;
+  position: relative;
+  text-align: center;
+  
+
+  h1 {
+    text-align: center;
+    font-size: 2rem;
+  }
+`
+
+const TopBar = styled(Toolbar)` 
+  width: 100%;
+  position: relative;
+  display: flex;
+  justify-content: center;
 `
 
 const Container = styled.div`
@@ -23,8 +52,34 @@ const Container = styled.div`
 
 `
 
+const InputText = styled(TextField)` 
+  height: 100%;
+`
+
 const ListaMensagem = styled.div`
-  flex-basis: 90%;
+  height: 90%;
+  overflow-y: scroll;
+
+  display: flex;
+  flex-flow: column nowrap;
+  justify-content: flex-end;
+  padding: 20px 40px;
+  font-size: 1.5rem;
+  background-color: rgb(201, 201, 201);
+`
+
+const ContainerMensagem = styled.span`
+
+  align-self: flex-start;
+  display: flex;
+  flex-flow: column nowrap;
+  justify-content: flex-start;
+  background-color: white;
+  border-radius: 5px;
+  padding: 10px;
+  margin: 10px 0px;
+  flex-basis: auto;
+  word-wrap: break-word;
 
   strong {
     
@@ -34,10 +89,22 @@ const ListaMensagem = styled.div`
     
   }
 
+  /* Se for mensagem da pessoa EU */ 
+  ${props => props.eu && css` 
+    align-self: flex-end;
+    justify-content: flex-end;
+    background-color: #07bc4c;
+    background-color: #e4ecf2;
+
+  > strong {
+    display: none;
+  }
+  `}
+
+
 `
 
 const CriarMensagem = styled.div`
-  flex-basis: 10%;
   height: 10%;
   display: flex;
   flex-flow: row nowrap;
@@ -45,14 +112,15 @@ const CriarMensagem = styled.div`
   
 
   > * {
-    height: 93%;
     font-size: 20px;
+    padding: 0;
+    margin: 0;
   }
 
   input {
     margin: 0;
     padding: 0;
-    
+    height: 50px;
   }
 
   input::placeholder {
@@ -60,12 +128,12 @@ const CriarMensagem = styled.div`
   }
 
   input:first-of-type {
-
+    flex-grow: 1;
     
   }
 
   input:last-of-type {
-    flex-grow: 1;
+    flex-grow: 2;
     
   }
 
@@ -97,31 +165,93 @@ class App extends React.Component {
   }
 
   criarMensagem = () => {
-    let novaLista = [...this.state.mensagens]
-    novaLista.push({pessoa: this.state.inputUsuario, conteudo: this.state.inputMensagem})
-    this.setState({mensagens: novaLista, inputUsuario: "", inputMensagem: ""})
+    if (this.state.inputUsuario === "" || this.state.inputMensagem === "") {
+      alert("Para criar uma mensagem você deve inserir:\nUsuário e texto válidos")
+    }
+    else {
+      let novaLista = [...this.state.mensagens]
+
+      const hora = new Date()
+      novaLista.push({
+        pessoa: this.state.inputUsuario, 
+        conteudo: this.state.inputMensagem,
+        hora: hora.toLocaleTimeString(
+          'pt-BR', {hour: '2-digit', minute: '2-digit'
+        })
+
+      })
+      this.setState({
+        mensagens: novaLista,
+        inputUsuario: "",
+        inputMensagem: ""
+      })
+    }
+  }
+  
+  enviarMensagemComEnter = (event) => {
+    if(event.key === 'Enter') {
+      this.criarMensagem()
+    }
+    
+  }
+  
+  apagarMensagem = (index) => {
+    const deletar = window.confirm('Tem certeza que deseja deletar essa mensagem?')
+    if (deletar) {
+      let novaLista = [...this.state.mensagens]
+      novaLista.splice(index, 1)
+      this.setState({mensagens: novaLista})
+    }
+    
   }
   
     render() {
-      
-      let mensagens = this.state.mensagens.map((mensagem) => {
-        
-          return <p><strong>{mensagem.pessoa + ":"}</strong><span>{mensagem.conteudo}</span></p>
+
+      let mensagens = this.state.mensagens.map((mensagem, index) => {
+        let tipo = mensagem.pessoa.toLowerCase() === 'eu' ? true : false
+
+        return (<ContainerMensagem
+        eu={tipo}
+        onDoubleClick={() => this.apagarMensagem(index)} 
+        key={index}>
+        <strong>{mensagem.pessoa}</strong>
+        <span>{mensagem.conteudo}</span>
+        <span>{mensagem.hora}</span>
+        </ContainerMensagem>)
       })
 
       return (
+      
       <Container>
         <GlobalStyle/>
+
+        <TopMenu position="relative" color="primary">
+          <TopBar>
+            <Typography variant="h1">
+              WhatsLab
+            </Typography>
+          </TopBar>
+        </TopMenu>
+
         <ListaMensagem>
-        {mensagens}
+          {mensagens}
         </ListaMensagem>
         <CriarMensagem>
-          <input type="text" placeholder="Usuário" onChange={this.atualizarUsuario} value={this.state.inputUsuario}/>
-          <input type="text" placeholder="Mensagem" onChange={this.atualizarMensagem} value={this.state.inputMensagem}/>
-          <button onClick={this.criarMensagem}>Enviar</button>
-        </CriarMensagem>
+          <TextField
+          label="Usuário"
+          onChange={this.atualizarUsuario}
+          onKeyDown={this.enviarMensagemComEnter}
+          value={this.state.inputUsuario}/>
+          <TextField label="Mensagem"
+          onChange={this.atualizarMensagem}
+          onKeyDown={this.enviarMensagemComEnter}
+          value={this.state.inputMensagem}/>
         
-
+        <Button variant="contained" color="primary"
+        onClick={this.criarMensagem}>
+        <SendIcon></SendIcon>
+        </Button>
+        </CriarMensagem>
       </Container>
 
     );
