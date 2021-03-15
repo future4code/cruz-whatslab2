@@ -10,6 +10,8 @@ import SendIcon from '@material-ui/icons/Send';
 import TextField from '@material-ui/core/TextField'
 import ArrowUpwardIcon from '@material-ui/icons/ArrowUpward';
 import ArrowDropDownCircleIcon from '@material-ui/icons/ArrowDropDownCircle';
+import MessageSoundReceived from './sounds/TelegramMessage.mp3'
+import MessageSoundSend from './sounds/MessageSend.mp3'
 
 
 function* idGenerator(){
@@ -278,6 +280,9 @@ class App extends React.Component {
     const listaLimpa = novaLista.filter(msg => msg.id < 1000 )
     
     localStorage.setItem('mensagens', JSON.stringify(listaLimpa))
+
+    const audioMsgEnviada = document.querySelector('#mensagem-enviada')
+    audioMsgEnviada.play()
   }
   
   
@@ -296,9 +301,16 @@ class App extends React.Component {
     }
   }
   
-  novaMensagem = msg =>
-    this.setState({mensagens: [...this.state.mensagens, msg]}, () => 
-    this.rolarLista())
+  novaMensagem = msg => {
+    this.setState(
+      {mensagens: [...this.state.mensagens, msg]},
+      () => this.rolarLista()
+    )
+    
+    const audioMsgRecebida = document.querySelector('#mensagem-recebida')
+    
+    audioMsgRecebida.play()
+  }
   
   rolarLista(direcao) {
     const lista = document.querySelector('.lista')
@@ -420,7 +432,8 @@ class App extends React.Component {
     let rolarParaCima = rolar !== 'nada' && <SetaParaCima
     className='seta' onClick={() => this.verificarDirecao(rolar)} />
       
-    let audio = <audio src='./sounds/TelegramMessage.mp3' autoplay loop></audio>
+    let audioMensagemRecebida = <audio id='mensagem-recebida' src={MessageSoundReceived}></audio>
+    let audioMensagemEnviada = <audio id='mensagem-enviada' src={MessageSoundSend}></audio>
 
     let mensagens = this.state.mensagens.map((mensagem, index) => 
       <ContainerMensagem 
@@ -447,7 +460,8 @@ class App extends React.Component {
     
     <Container>
       <GlobalStyle/>
-      {audio}
+      {audioMensagemEnviada}
+      {audioMensagemRecebida}
       {rolarParaCima}
       <TopMenu position="relative" color="primary">
         <TopBar>
