@@ -8,6 +8,8 @@ import DoneIcon from '@material-ui/icons/Done';
 import DoneAllIcon from '@material-ui/icons/DoneAll';
 import SendIcon from '@material-ui/icons/Send';
 import TextField from '@material-ui/core/TextField'
+import ArrowUpwardIcon from '@material-ui/icons/ArrowUpward';
+import ArrowDropDownCircleIcon from '@material-ui/icons/ArrowDropDownCircle';
 
 
 function* idGenerator(){
@@ -27,6 +29,20 @@ const GlobalStyle = createGlobalStyle`
 
   body {
     background: #333;
+  }
+`
+
+const SetaParaCima = styled(ArrowDropDownCircleIcon)`
+  position: absolute;
+  top: 75px;
+  right: 15px;
+  cursor: pointer;
+  z-index: 2;
+  transform: rotate(180deg);
+
+  && {
+    font-size: 3.5rem;
+    transition: all 3s;
   }
 `
 
@@ -60,6 +76,7 @@ const Container = styled.div`
   flex-flow: column nowrap;
   justify-content: center;
   align-items: stretch;
+  position: relative;
 
   border: 2px solid #333;
 
@@ -74,7 +91,7 @@ const ListaMensagem = styled.div`
   height: 90%;
   min-height: 500px;
   overflow-y: scroll;
-
+  position: relative;
   padding: 20px 40px;
   font-size: 1.5rem;
   background-color: rgb(201, 201, 201);
@@ -222,7 +239,9 @@ class App extends React.Component {
   state = {
     mensagens: [],
     inputUsuario: "",
-    inputMensagem: ""
+    inputMensagem: "",
+    habilitarRolarParaCima: 'nada',
+    habilitarRolarParaBaixo: false
   }
   
   atualizarUsuario = e => this.setState({inputUsuario: e.target.value})
@@ -253,7 +272,7 @@ class App extends React.Component {
       mensagens: novaLista,
       inputUsuario: "",
       inputMensagem: ""
-    })
+    }, () => this.rolarLista())
     
     //removendo as mensagens automaticas que nao tem ID
     const listaLimpa = novaLista.filter(msg => msg.id < 1000 )
@@ -278,7 +297,8 @@ class App extends React.Component {
   }
   
   novaMensagem = msg =>
-    this.setState({mensagens: [...this.state.mensagens, msg]})
+    this.setState({mensagens: [...this.state.mensagens, msg]}, () => 
+    this.rolarLista())
   
   rolarLista(direcao) {
     const lista = document.querySelector('.lista')
@@ -305,20 +325,20 @@ class App extends React.Component {
       pessoa: 'Tia',
       conteudo: 'Delicia esta receitinha',
       link: (<a href='https://www.tudogostoso.com.br/receita/177071-hamburguer-vegetariano-de-lentilha.html'>https://www.tudogostoso.com.br/receita/177071-hamburguer-vegetariano-de-lentilha.html</a>),
-      hora: 'ahora',
+      hora: this.gerarHoraFormatada()
     }), 5000)
 
     setTimeout(() => this.novaMensagem({
       pessoa: 'eu',
       conteudo: 'Nova estrategia para codar',
       foto: (<img src="https://miro.medium.com/max/396/1*anhgwPSlWe9C2P1aFTL85Q.jpeg" alt='meme' />),
-      hora: 'ahora',
+      hora: this.gerarHoraFormatada(),
     }), 10000)
 
     setTimeout(() => this.novaMensagem({
       pessoa: 'Dono do Whatslab', 
       conteudo: 'E aew, como está o desenvolvimento do App?',
-      hora: 'agora'
+      hora: this.gerarHoraFormatada()
       }), 20000
     )
     
@@ -326,17 +346,82 @@ class App extends React.Component {
       pessoa: 'Coleguinha',
       conteudo: `Bora escurar uma musiquinha?`,
       video: (<iframe title="youtube" width="320" height="250" src="https://www.youtube.com/embed/NCtzkaL2t_Y" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>),
-      hora: 'agorinha mesmo'
+      hora: this.gerarHoraFormatada()
       }), 15000
     )
+    
+    const lista = document.querySelector('.lista')
+    lista.onScroll = this.rolarParaCimaSePrecisar
   }
   
   componentDidUpdate(){
-    this.rolarLista()
+    this.rolarParaCimaSePrecisar()
   }
   
+  verificarRolagem = e => {
+    const lista = document.querySelector('.lista')
+    
+    if (lista.scrollTop < lista.clientHeight) {
+      console.log(lista.scrollTop)
+      this.setState({ habilitarRolarParaCima: false})
+    } else {
+      console.log(`Passou do ponto`)
+      this.setState({ habilitarRolarParaCima: true})
+    }
+  }
+  
+  rolarParaCimaSePrecisar(){
+    const lista = document.querySelector('.lista')
+    //const cima = this.state.habilitarRolarParaCima
+
+    //console.log(cima)
+    //console.log(lista.scrollTop)
+    
+    // if (!lista.scrollTop && cima && cima !== 'nada') {
+    //   this.setState({habilitarRolarParaCima: false})
+    //   console.log('voltou top')
+    // }
+    
+    // if (lista.clientHeight < lista.scrollHeight &&
+    //   lista.scrollTop &&
+    //   (!this.state.habilitarRolarParaCima ||
+    //     this.state.habilitarRolarParaCima === 'nada')) {
+    //     this.setState({habilitarRolarParaCima: true})
+    //     console.log('foi pra baixo')
+    //   }
+    
+    //console.log(this.state.habilitarRolarParaCima)
+
+  }
+  
+  verificarDirecao(dir){
+    const seta = document.querySelector('.seta')
+    const lista = document.querySelector('.lista')
+
+    if (dir) {
+      console.log('vamu pra cima: ' + dir)
+      this.rolarLista('cima')
+      seta.style.transform = 'rotate(0deg)'
+      seta.style.marginTop = lista.clientHeight - 80 + 'px'
+      setTimeout(this.setState({habilitarRolarParaCima: false}), 500)
+      
+    } else {
+      console.log('vamu pra baixo: ' + dir)
+      this.rolarLista()
+      seta.style.transform = 'rotate(180deg)'
+      seta.style.marginTop = '0'
+      setTimeout(this.setState({habilitarRolarParaCima: true}), 500)
+    }
+
+  }
   
   render() {
+    const rolar = this.state.habilitarRolarParaCima
+    let rolarParaCima = rolar !== 'nada' && <SetaParaCima
+    className='seta' onClick={() => this.verificarDirecao(rolar)} />
+      
+    let audio = <audio src='./sounds/TelegramMessage.mp3' autoplay loop></audio>
+
     let mensagens = this.state.mensagens.map((mensagem, index) => 
       <ContainerMensagem 
         eu={mensagem.pessoa.toLowerCase() === 'eu' && true}
@@ -354,12 +439,16 @@ class App extends React.Component {
 
       </ContainerMensagem>
     )
+    
+  
+
 
     return (
     
     <Container>
       <GlobalStyle/>
-
+      {audio}
+      {rolarParaCima}
       <TopMenu position="relative" color="primary">
         <TopBar>
           <Typography variant="h1">
@@ -368,7 +457,8 @@ class App extends React.Component {
         </TopBar>
       </TopMenu>
 
-      <ListaMensagem className='lista'>
+      <ListaMensagem className='lista'
+      onScroll={this.rolarParaCimaSePrecisar}>
         {mensagens}
       </ListaMensagem>
 
